@@ -246,3 +246,182 @@ wineR2
 moneyBall = read.csv("baseball.csv")
 cor(moneyBall$Playoffs, moneyBall$W)
 plot(moneyBall$W, moneyBall$Playoffs)
+
+# Framingham Logistic Regression/Classification
+getwd()
+setwd("c:/R/AnalyticsEdge")
+getwd()
+framingham = read.csv("framingham.csv")
+str(framingham)
+
+#Install Packages
+install.packages("caTools")
+#Load Package
+library(caTools)
+
+#Split data
+set.seed(1000)
+split = sample.split(framingham$TenYearCHD, SplitRatio = 0.65)
+
+train = subset(framingham, split==TRUE)
+test = subset(framingham, split == FALSE)
+framinghamLog = glm(TenYearCHD ~ ., data = train, family = binomial)
+summary(framinghamLog)
+predictTest = predict(framinghamLog, type = "response", newdata=test)
+table(test$TenYearCHD, predictTest > 0.5)
+
+#Logistic Regression for Poor Care
+quality = read.csv("quality.csv")
+str(quality)
+table(quality$PoorCare)
+
+# Baseline model for Classification problem
+# In a classification problem, a standard baseline method
+# is to just predict the most frequent outcome for all observations.
+# Since good care is more common than poor care, in this case,
+# we would predict that all patients are receiving good care.
+# 98/131 = Accuracy of 75% of baseline model
+
+# Split data in training set and test set
+# Use new package caTools
+# install.packages("caTools")
+# load package library(caTools)
+set.seed(88)
+# Split has two agrument, 1 is the outcome/dependent variable & 2 is ratio/percentage
+split = sample.split(quality$PoorCare, SplitRatio = 0.75)
+split
+qualitytrain = subset(quality, split == TRUE)
+qualitytest = subset(quality, split == FALSE)
+nrow(qualitytrain)
+nrow(qualitytest)
+
+# Generalised Linear Model
+qualityLog = glm(PoorCare ~ OfficeVisits + Narcotics, data = qualitytrain, family = binomial )
+summary(qualityLog)
+# ALC is measure of quality like adjusted r square, minimum AIC is preferred
+# ?predict
+predictTrain = predict(qualityLog, type="response")
+summary(predictTrain)
+?tapply
+tapply(predictTrain, qualitytrain$PoorCare, mean)
+qualityLog1 = glm(PoorCare ~ StartedOnCombination + ProviderCount, data = qualitytrain, family = binomial)
+summary(qualityLog1)
+predictTrain1 = predict(qualityLog1, type="response")
+summary(predictTrain1)
+
+# Confusion Matrix/Classification Matrix
+# Compares Actual Outcomes to Predicted Ooutcomes
+# The rows are labeled with the actual outcome,
+# and the columns are labeled with the predicted outcome.
+# Each entry of the table gives the number of data
+# observations that fall into that category.
+
+# We can compute two outcome measures
+# that help us determine what types of errors we are making.
+# They're called sensitivity and specificity.
+
+# Sensitivity is equal to the true positives
+# divided by the true positives plus the false negatives,
+# and measures the percentage of actual poor care cases that we classify correctly.
+# This is often called the true positive rate.
+
+# Specificity is equal to the true negatives
+# divided by the true negatives plus the false positives,
+# and measures the percentage of actual good care cases
+# that we classify correctly.
+# This is often called the true negative rate.
+
+# A model with a higher threshold will have a lower sensitivity
+# and a higher specificity.
+# A model with a lower threshold will have a higher sensitivity
+# and a lower specificity.
+# To decrease specificity, increase threshold
+
+
+table(qualitytrain$PoorCare, predictTrain > 0.5)
+table(qualitytrain$PoorCare, predictTrain > 0.7)
+table(qualitytrain$PoorCare, predictTrain > 0.2)
+sensitivity1 = 10/25
+specificity1 = 70/74
+sensitivity2 = 8/25
+specificity2 = 73/74
+sensitivity3 = 16/25
+specificity3 = 54/74
+sensitivity1
+specificity1
+sensitivity2
+specificity2
+sensitivity3
+specificity3
+
+20/25
+15/25
+15/25
+20/25
+
+# Picking a good threshold value is often challenging.
+# A Receiver Operator Characteristic curve,
+# or ROC curve, can help you decide
+# which value of the threshold is best.
+# Threshold value 1 means sensitivity is 0
+
+install.packages("ROCR")
+library(ROCR)
+
+#Logistic Regression for Poor Care
+quality = read.csv("quality.csv")
+str(quality)
+table(quality$PoorCare)
+set.seed(88)
+split = sample.split(quality$PoorCare, SplitRatio = 0.75)
+split
+qualitytrain = subset(quality, split == TRUE)
+qualitytest = subset(quality, split == FALSE)
+nrow(qualitytrain)
+nrow(qualitytest)
+qualityLog = glm(PoorCare ~ OfficeVisits + Narcotics, data = qualitytrain, family = binomial )
+summary(qualityLog)
+predictTrain = predict(qualityLog, type="response")
+summary(predictTrain)
+tapply(predictTrain, qualitytrain$PoorCare, mean)
+
+table(qualitytrain$PoorCare, predictTrain > 0.5)
+table(qualitytrain$PoorCare, predictTrain > 0.7)
+table(qualitytrain$PoorCare, predictTrain > 0.2)
+sensitivity1 = 10/25
+specificity1 = 70/74
+sensitivity2 = 8/25
+specificity2 = 73/74
+sensitivity3 = 16/25
+specificity3 = 54/74
+sensitivity1
+specificity1
+sensitivity2
+specificity2
+sensitivity3
+specificity3
+library(ROCR)
+
+ROCRPred = prediction(predictTrain, qualitytrain$PoorCare)
+ROCRPerf = performance(ROCRPred, "tpr", "fpr")
+plot(ROCRPerf)
+plot(ROCRPerf, colorize=TRUE)
+plot(ROCRPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,0.1))
+plot(ROCRPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,0.1), text.adj=c(-0.2,1.7))
+
+
+# Overall Accuracy = (TP+TN)/N
+# Overall Error Rate = (FP+FN)/N
+# Sensitivity = TP/(TP+FN)
+# Specificity = TN/(TN+FP)
+# False Negative Error Rate = FN/(TP+FN)
+# False Positive Error Rate = FP/(TN+FP) = 1 - Specificity
+
+
+predictTest = predict(qualityLog, type="response", newdata=qualitytest)
+summary(predictTest)
+tapply(predictT, qualitytrain$PoorCare, mean)
+
+table(qualitytrain$PoorCare, predictTrain > 0.3)
+sensitivity1 = 10/25
+specificity1 = 70/74
