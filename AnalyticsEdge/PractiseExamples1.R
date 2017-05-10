@@ -425,3 +425,7 @@ tapply(predictT, qualitytrain$PoorCare, mean)
 table(qualitytrain$PoorCare, predictTrain > 0.3)
 sensitivity1 = 10/25
 specificity1 = 70/74
+
+getwd()
+setwd("C:/R/AnalyticsEdge")
+getwd()
